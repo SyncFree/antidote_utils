@@ -1,0 +1,1 @@
+-type vectorclock() :: vectorclock:vectorclock().

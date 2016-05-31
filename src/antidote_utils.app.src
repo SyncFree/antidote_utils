@@ -1,0 +1,14 @@
+{application, antidote_utils,
+ [
+  {description, "An Erlang antidote_utils library"},
+  {vsn, "1"},
+  {modules, [
+             antidote_utils
+            ]},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {env, []}
+ ]}.
