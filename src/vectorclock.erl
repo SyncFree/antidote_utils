@@ -38,7 +38,9 @@
          strict_ge/2,
          strict_le/2,
          max/1,
-         min/1]).
+         min/1,
+	 to_json/1,
+	 from_json/1]).
 
 -export_type([vectorclock/0]).
 
@@ -112,6 +114,21 @@ strict_ge(V1,V2) -> ge(V1,V2) and (not eq(V1,V2)).
 
 -spec strict_le(vectorclock(), vectorclock()) -> boolean().
 strict_le(V1,V2) -> le(V1,V2) and (not eq(V1,V2)).
+
+to_json(VectorClock) ->
+    Elements = 
+	dict:fold(fun(DCID,Time,Acc) ->
+			  Acc++[[{dcid_and_time,
+				  [json_utilities:convert_to_json(DCID),Time]}]]
+		     end,[],VectorClock),
+    [{vectorclock,Elements}].
+
+from_json([{vectorclock,Elements}]) ->
+    List = 
+	lists:map(fun([{dcid_and_time,[JSONDCID,Time]}]) ->
+			 {json_utilities:deconvert_from_json(JSONDCID),Time}
+		 end,Elements),
+    from_list(List).
 
 -ifdef(TEST).
 
