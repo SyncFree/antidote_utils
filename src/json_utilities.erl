@@ -18,7 +18,7 @@
 %%
 %% -------------------------------------------------------------------
 -module(json_utilities).
--include("antidote.hrl").
+-include("antidote_utils.hrl").
 
 -export([
 	 crdt_to_json/2,
