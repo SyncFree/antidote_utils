@@ -51,6 +51,12 @@ txid_from_json([{txid,[JTime,JPid]}]) ->
     #tx_id{snapshot_time=deconvert_from_json(JTime),
 	  server_pid=deconvert_from_json(JPid)}.
 
+dcid_to_json(undefined) ->
+    [{dcid, undefined}];
+dcid_to_json({) ->
+
+
+
 clocksi_payload_to_json(#clocksi_payload{key=Key,type=Type,op_param=Op,snapshot_time=SnapshotTime,commit_time=CommitTime,txid=TxId}) ->
     JKey = convert_to_json(Key),
     JType = convert_to_json(Type),
