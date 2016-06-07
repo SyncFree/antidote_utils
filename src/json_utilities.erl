@@ -54,7 +54,13 @@ txid_from_json([{txid,[JTime,JPid]}]) ->
 clocksi_payload_to_json(#clocksi_payload{key=Key,type=Type,op_param=Op,snapshot_time=SnapshotTime,commit_time=CommitTime,txid=TxId}) ->
     JKey = convert_to_json(Key),
     JType = convert_to_json(Type),
-    JOp = Type:downstream_to_json(Op),
+    JOp = 
+	case Op of
+	    {update, Downstream} ->
+		[{update, Type:downstream_to_json(Downstream)}];
+	    {merge, State} ->
+		[{merge, Type:to_json(State)}]
+	end,
     JSnapshotTime = vectorclock:to_json(SnapshotTime),
     JCommitTime = vectorclock:to_json(CommitTime),
     JTxId = txid_to_json(TxId),
@@ -73,7 +79,13 @@ clocksi_payload_from_json([{clocksi_payload,[[{key,JKey}],
 					     JTxId]}]) ->
     Key = deconvert_from_json(JKey),
     Type = deconvert_from_json(JType),
-    Op = Type:downstream_from_json(JOp),
+    Op = 
+	case JOp of
+	    [{update, JDownstream}] ->
+		{update, Type:downstream_from_json(JDownstream)};
+	    [{merge, JState}] ->
+		{merge, Type:from_json(JState)}
+	end,
     SnapshotTime = vectorclock:from_json(JSnapshotTime),
     CommitTime = vectorclock:from_json(JCommitTime),
     TxId = txid_from_json(JTxId),

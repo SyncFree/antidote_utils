@@ -1,6 +1,7 @@
 
+-type downstream_record() :: term().
 -type key() :: term().
--type op()  :: {term(), term()}.
+-type op()  :: {update | merge, downstream_record()}.
 -type type() :: atom().
 -type dcid() :: 'undefined' | {_,_}.
 -type snapshot_time() ::  vectorclock:vectorclock().
