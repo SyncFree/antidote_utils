@@ -119,14 +119,14 @@ to_json(VectorClock) ->
     Elements = 
 	dict:fold(fun(DCID,Time,Acc) ->
 			  Acc++[[{dcid_and_time,
-				  [json_utilities:convert_to_json(DCID),Time]}]]
+				  [json_utilities:dcid_to_json(DCID),Time]}]]
 		     end,[],VectorClock),
     [{vectorclock,Elements}].
 
 from_json([{vectorclock,Elements}]) ->
     List = 
 	lists:map(fun([{dcid_and_time,[JSONDCID,Time]}]) ->
-			 {json_utilities:deconvert_from_json(JSONDCID),Time}
+			 {json_utilities:dcid_from_json(JSONDCID),Time}
 		 end,Elements),
     from_list(List).
 

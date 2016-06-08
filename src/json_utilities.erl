@@ -70,7 +70,7 @@ dcid_from_json([{dcid, Other}]) ->
 
 clocksi_payload_to_json(#clocksi_payload{key=Key,type=Type,op_param=Op,snapshot_time=SnapshotTime,commit_time={DCID,CT},txid=TxId}) ->
     JKey = convert_to_json(Key),
-    JType = convert_to_json(Type),
+    JType = Type,
     JOp = 
 	case Op of
 	    {update, Downstream} ->
@@ -95,7 +95,7 @@ clocksi_payload_from_json([{clocksi_payload,[[{key,JKey}],
 					     [{commit_time,[JDCID,CT]}],
 					     JTxId]}]) ->
     Key = deconvert_from_json(JKey),
-    Type = deconvert_from_json(JType),
+    Type = JType,
     Op = 
 	case JOp of
 	    [{update, JDownstream}] ->
