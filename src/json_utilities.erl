@@ -95,7 +95,12 @@ clocksi_payload_from_json([{clocksi_payload,[[{key,JKey}],
 					     [{commit_time,[JDCID,CT]}],
 					     JTxId]}]) ->
     Key = deconvert_from_json(JKey),
-    Type = JType,
+    Type = case JType of
+	       _ when is_binary(JType) ->
+		   binary_to_atom(JType, utf8);
+	       _ when is_atom(JType) ->
+		   JType
+	   end,
     Op = 
 	case JOp of
 	    [{update, JDownstream}] ->
