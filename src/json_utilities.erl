@@ -25,6 +25,8 @@
 	 crdt_from_json/1,
 	 txid_to_json/1,
 	 txid_from_json/1,
+	 dcid_to_json/1,
+	 dcid_from_json/1,
 	 clocksi_payload_to_json/1,
 	 clocksi_payload_from_json/1,
 	 convert_to_json/1,
@@ -36,7 +38,6 @@
 	 erlang_term_to_json_binary/1,
 	 binary_to_json_binary/1
 	]).
-	 
 
 crdt_to_json(Type, Value) ->
     Type:to_json(Value).
@@ -53,11 +54,21 @@ txid_from_json([{txid,[JTime,JPid]}]) ->
 
 dcid_to_json(undefined) ->
     [{dcid, undefined}];
-dcid_to_json({) ->
+dcid_to_json({Id,Time}) ->
+    [{dcid, [{Id,Time}]}];
+dcid_to_json(Other) ->
+    [{dcid, convert_to_json(Other)}].
+
+dcid_from_json([{dcid, undefined}]) ->
+    undefined;
+dcid_from_json([{dcid, [{Id,Time}]}]) ->
+    {Id,Time};
+dcid_from_json([{dcid, Other}]) ->
+    deconvert_from_json(Other).
 
 
 
-clocksi_payload_to_json(#clocksi_payload{key=Key,type=Type,op_param=Op,snapshot_time=SnapshotTime,commit_time=CommitTime,txid=TxId}) ->
+clocksi_payload_to_json(#clocksi_payload{key=Key,type=Type,op_param=Op,snapshot_time=SnapshotTime,commit_time={DCID,CT},txid=TxId}) ->
     JKey = convert_to_json(Key),
     JType = convert_to_json(Type),
     JOp = 
@@ -68,7 +79,7 @@ clocksi_payload_to_json(#clocksi_payload{key=Key,type=Type,op_param=Op,snapshot_
 		[{merge, Type:to_json(State)}]
 	end,
     JSnapshotTime = vectorclock:to_json(SnapshotTime),
-    JCommitTime = vectorclock:to_json(CommitTime),
+    JCommitTime = [dcid_to_json(DCID),CT],
     JTxId = txid_to_json(TxId),
     [{clocksi_payload,[[{key,JKey}],
 		       [{type,JType}],
@@ -81,7 +92,7 @@ clocksi_payload_from_json([{clocksi_payload,[[{key,JKey}],
 					     [{type,JType}],
 					     JOp,
 					     [{snapshot_time,JSnapshotTime}],
-					     [{commit_time,JCommitTime}],
+					     [{commit_time,[JDCID,CT]}],
 					     JTxId]}]) ->
     Key = deconvert_from_json(JKey),
     Type = deconvert_from_json(JType),
@@ -93,7 +104,7 @@ clocksi_payload_from_json([{clocksi_payload,[[{key,JKey}],
 		{merge, Type:from_json(JState)}
 	end,
     SnapshotTime = vectorclock:from_json(JSnapshotTime),
-    CommitTime = vectorclock:from_json(JCommitTime),
+    CommitTime = {dcid_from_json(JDCID),CT},
     TxId = txid_from_json(JTxId),
     #clocksi_payload{key=Key,type=Type,op_param=Op,snapshot_time=SnapshotTime,commit_time=CommitTime,txid=TxId}.
 
