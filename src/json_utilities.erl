@@ -27,6 +27,8 @@
 	 txid_from_json/1,
 	 dcid_to_json/1,
 	 dcid_from_json/1,
+	 type_to_json/1,
+	 type_from_json/1,
 	 clocksi_payload_to_json/1,
 	 clocksi_payload_from_json/1,
 	 convert_to_json/1,
@@ -66,11 +68,17 @@ dcid_from_json([{dcid, [{Id,Time}]}]) ->
 dcid_from_json([{dcid, Other}]) ->
     deconvert_from_json(Other).
 
+type_to_json(Type) ->
+    Type.
 
+type_from_json(JType) when is_binary(JType) ->
+    binary_to_atom(JType, utf8);
+type_from_json(JType) when is_atom(JType) ->
+    JType.
 
 clocksi_payload_to_json(#clocksi_payload{key=Key,type=Type,op_param=Op,snapshot_time=SnapshotTime,commit_time={DCID,CT},txid=TxId}) ->
     JKey = convert_to_json(Key),
-    JType = Type,
+    JType = type_to_json(Type),
     JOp = 
 	case Op of
 	    {update, Downstream} ->
@@ -95,12 +103,7 @@ clocksi_payload_from_json([{clocksi_payload,[[{key,JKey}],
 					     [{commit_time,[JDCID,CT]}],
 					     JTxId]}]) ->
     Key = deconvert_from_json(JKey),
-    Type = case JType of
-	       _ when is_binary(JType) ->
-		   binary_to_atom(JType, utf8);
-	       _ when is_atom(JType) ->
-		   JType
-	   end,
+    Type = type_from_json(JType),
     Op = 
 	case JOp of
 	    [{update, JDownstream}] ->
