@@ -25,6 +25,8 @@
 	 crdt_from_json/1,
 	 txid_to_json/1,
 	 txid_from_json/1,
+	 pid_to_json/1,
+	 pid_from_json/1,
 	 dcid_to_json/1,
 	 dcid_from_json/1,
 	 atom_to_json/1,
@@ -48,11 +50,26 @@ crdt_from_json([{orset,Value}]) ->
     crdt_orset:from_json([{orset,Value}]).
 
 txid_to_json(#tx_id{snapshot_time=Time,server_pid=Pid}) ->
-    [{txid,[convert_to_json(Time),convert_to_json(Pid)]}].
+    [{txid,[convert_to_json(Time),pid_to_json(Pid)]}].
 
 txid_from_json([{txid,[JTime,JPid]}]) ->
     #tx_id{snapshot_time=deconvert_from_json(JTime),
-	  server_pid=deconvert_from_json(JPid)}.
+	  server_pid=pid_from_json(JPid)}.
+
+pid_to_json(PID) ->
+    [{pid,PID}].
+
+pid_from_json([{pid,BPID}]) ->
+    LPID = 
+	case BPID of
+	    _ when is_atom(BPID) ->
+		atom_to_list(BPID);
+	    _ when is_list(BPID) ->
+		BPID;
+	    _ when is_binary(BPID) ->
+		binary_to_list(BPID)
+	end,
+    list_to_pid(LPID).
 
 dcid_to_json(undefined) ->
     [{dcid, undefined}];
