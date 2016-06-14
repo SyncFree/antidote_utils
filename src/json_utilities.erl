@@ -50,11 +50,11 @@ crdt_from_json([{orset,Value}]) ->
     crdt_orset:from_json([{orset,Value}]).
 
 txid_to_json(#tx_id{snapshot_time=Time,server_pid=Pid}) ->
-    [{txid,[convert_to_json(Time),pid_to_json(Pid)]}].
+    [{txid,[convert_to_json(Time),atom_from_json(Pid)]}].
 
 txid_from_json([{txid,[JTime,JPid]}]) ->
     #tx_id{snapshot_time=deconvert_from_json(JTime),
-	  server_pid=pid_from_json(JPid)}.
+	  server_pid=atom_to_json(JPid)}.
 
 pid_to_json(PID) ->
     [{pid,PID}].
@@ -88,7 +88,7 @@ dcid_from_json([{dcid, [JId,T1,T2,T3]}]) ->
 dcid_from_json([{dcid, Other}]) ->
     deconvert_from_json(Other).
 
-atom_to_json(Type) ->
+atom_to_json(Type) when is_atom(Type) ->
     Type.
 
 atom_from_json(JType) when is_binary(JType) ->
