@@ -1,5 +1,6 @@
 
 -type downstream_record() :: term().
+-type actor() :: term().
 -type key() :: term().
 -type op()  :: {update | merge, downstream_record()}.
 -type type() :: atom().
