@@ -31,6 +31,7 @@
 
 -export([new/0,
 	 get_smaller/2,
+	 get_smaller_from_id/3,
 	 insert/3,
 	 insert_bigger/3,
 	 sublist/3,
@@ -61,6 +62,24 @@ get_smaller_internal(Vector,[{FirstClock,FirstVal}|Rest],IsFirst) ->
 	    {{FirstClock,FirstVal},IsFirst};
 	false ->
 	    get_smaller_internal(Vector,Rest,false)
+    end.
+
+-spec get_smaller_from_id(term(),clock_time(),vector_orddict()) -> undefined | {vectorclock(),term()}.
+get_smaller_from_id(_Id,_Time,{_List,Size}) when Size == 0 ->
+    undefined;
+get_smaller_from_id(Id,Time,{List,_Size}) ->
+    get_smaller_from_id_internal(Id,Time,List).
+
+-spec get_smaller_from_id_internal(term(),clock_time(),[{vectorclock,term()}, ...]) -> undefined | {vectorclock(),term()}.
+get_smaller_from_id_internal(_Id,_Time,[]) ->
+    undefined;
+get_smaller_from_id_internal(Id,Time,[{Clock,Val}|Rest]) ->
+    ValTime = vectorclock:get_clock_of_dc(Id,Clock),
+    case ValTime =< Time of
+	true ->
+	    {Clock,Val};
+	false ->
+	    get_smaller_from_id_internal(Id,Time,Rest)
     end.
 
 -spec insert(vectorclock(),term(),vector_orddict()) -> vector_orddict().
@@ -129,6 +148,23 @@ filter(Fun,{List,_Size}) ->
 
 
 -ifdef(TEST).
+
+vector_oddict_get_smaller_from_id_test() ->
+    %% Fill up the vector
+    Vdict0 = vector_orddict:new(),
+    CT1 = vectorclock:from_list([{dc1,4},{dc2,4}]),
+    Vdict1 = vector_orddict:insert(CT1, 1,Vdict0),
+    CT2 = vectorclock:from_list([{dc1,8},{dc2,8}]),
+    Vdict2 = vector_orddict:insert(CT2, 2, Vdict1),
+    CT3 = vectorclock:from_list([{dc1,1},{dc2,10}]),
+    Vdict3 = vector_orddict:insert(CT3, 3, Vdict2),
+    
+    %% Check you get the correct smaller snapshot
+    ?assertEqual(undefined, vector_orddict:get_smaller_from_id(dc1,0,Vdict0)),
+    ?assertEqual(undefined, vector_orddict:get_smaller_from_id(dc1,0,Vdict3)),
+    ?assertEqual({CT3,3}, vector_orddict:get_smaller_from_id(dc1,1,Vdict3)),
+    ?assertEqual({CT2,2}, vector_orddict:get_smaller_from_id(dc2,9,Vdict3)).
+
 
 vector_orddict_get_smaller_test() ->
     %% Fill up the vector
