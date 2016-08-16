@@ -45,6 +45,7 @@
 
 %% @doc The vector orddict is an ordered dictionary used to store materialized snapshots whose order
 %%      is described by vectorclocks.
+%%      Note that the elements are stored in a sorted list going from big to small (left to right).
 -spec new() -> {[],0}.
 new() ->
     {[],0}.
