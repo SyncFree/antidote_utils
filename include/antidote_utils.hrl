@@ -5,11 +5,15 @@
 -type op()  :: {update | merge, downstream_record()}.
 -type type() :: atom().
 -type dcid() :: 'undefined' | {_,_}.
+-type payload() :: term().
+-record(operation, {op_number, payload :: payload()}).
+-type operation() :: #operation{}.
+-type snapshot() :: term().
 -type snapshot_time() ::  vectorclock:vectorclock().
 -type clock_time() :: non_neg_integer().
 -type dc_and_commit_time() ::  {dcid(), clock_time()}.
 
--record(tx_id, {local_start_time :: clock_time(), 
+-record(tx_id, {local_start_time :: clock_time(),
                 server_pid :: pid()}).
 -record(clocksi_payload, {key :: key(),
                           type :: type(),
