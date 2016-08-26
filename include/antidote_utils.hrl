@@ -4,7 +4,7 @@
 -type key() :: term().
 -type op()  :: {update | merge, downstream_record()}.
 -type type() :: atom().
--type dcid() :: 'undefined' | {_,_}.
+-type dcid() :: 'undefined' | {atom(),tuple()}. %% TODO, is this the only structure that is returned by riak_core_ring:cluster_name(Ring)?
 -type payload() :: term().
 -record(operation, {op_number, payload :: payload()}).
 -type operation() :: #operation{}.
