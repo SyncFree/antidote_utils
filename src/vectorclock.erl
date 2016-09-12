@@ -26,47 +26,184 @@
 -endif.
 
 -export([
-         get_clock_of_dc/2,
-         set_clock_of_dc/3,
-         from_list/1,
-         new/0,
-         eq/2,
-         lt/2,
-         gt/2,
-         le/2,
-         ge/2,
-         strict_ge/2,
-         strict_le/2,
-         max/1,
-         min/1,
-	 to_json/1,
-	 from_json/1]).
+    get_clock_of_dc/2,
+    set_clock_of_dc/3,
+    get_stable_snapshot/0,
+    get_scalar_stable_time/0,
+    get_partition_snapshot/1,
+    create_commit_vector_clock/3,
+    from_list/1,
+    new/0,
+    eq/2,
+    lt/2,
+    gt/2,
+    le/2,
+    ge/2,
+    find/2,
+    strict_ge/2,
+    strict_le/2,
+    max/1,
+    min/1,
+    fold/3,
+    store/3,
+    fetch/2,
+    erase/2,
+    map/2,
+    max_vc/2,
+    min_vc/2]).
 
 -export_type([vectorclock/0]).
 
 -spec new() -> vectorclock().
 new() ->
-    dict:new().
-          
+    orddict:new().
+
+fold(F, Acc, [{Key,Val}|D]) ->
+    orddict:fold(F, F(Key, Val, Acc), D);
+fold(F, Acc, []) when is_function(F, 3) -> Acc.
+
+find(Key, Orddict) ->
+    orddict:find(Key, Orddict).
+
+store(Key, Value, Orddict1) ->
+    orddict:store(Key, Value, Orddict1).
+
+fetch(Key, Orddict)->
+    orddict:fetch(Key, Orddict).
+
+erase(Key, Orddict1)->
+    orddict:erase(Key, Orddict1).
+
+map(Fun, Orddict1) ->
+    orddict:map(Fun, Orddict1).
+
+%% @doc get_stable_snapshot: Returns stable snapshot time
+%% in the current DC. stable snapshot time is the snapshot available at
+%% in all partitions
+-spec get_stable_snapshot() -> {ok, snapshot_time()}.
+get_stable_snapshot() ->
+    case meta_data_sender:get_merged_data(stable) of
+        undefined ->
+            %% The snapshot isn't ready yet, need to wait for startup
+            timer:sleep(10),
+            get_stable_snapshot();
+        SS ->
+            case application:get_env(antidote, txn_prot) of
+                {ok, Prot} when ((Prot == clocksi) orelse (Prot == physics))->
+                    %% This is fine if transactions coordinators exists on the ring (i.e. they have access
+                    %% to riak core meta-data) otherwise will have to change this
+                    {ok, SS};
+                {ok, gr} ->
+                    %% For gentlerain use the same format as clocksi
+                    %% But, replicate GST to all entries in the orddict
+                    StableSnapshot = SS,
+                    case orddict:size(StableSnapshot) of
+                        0 ->
+                            {ok, StableSnapshot};
+                        _ ->
+                            ListTime = vectorclock:fold(
+                                fun(_Key, Value, Acc) ->
+                                    [Value | Acc]
+                                end, [], StableSnapshot),
+                            GST = lists:min(ListTime),
+                            {ok, orddict:map(
+                                fun(_K, _V) ->
+                                    GST
+                                end,
+                                StableSnapshot)}
+                    end
+            end
+    end.
+
+-spec get_partition_snapshot(partition_id()) -> snapshot_time().
+get_partition_snapshot(Partition) ->
+    case meta_data_sender:get_meta_dict(stable, Partition) of
+        undefined ->
+            %% The partition isn't ready yet, wait for startup
+            timer:sleep(10),
+            get_partition_snapshot(Partition);
+        SS ->
+            SS
+    end.
+
+%% Returns the minimum value in the stable vector snapshot time
+%% Useful for gentlerain protocol.
+-spec get_scalar_stable_time() -> {ok, non_neg_integer(), vectorclock()}.
+get_scalar_stable_time() ->
+    {ok, StableSnapshot} = get_stable_snapshot(),
+    %% orddict:is_empty/1 is not available, hence using orddict:size/1
+    %% to check whether it is empty
+    case orddict:size(StableSnapshot) of
+        0 ->
+            %% This case occur when updates from remote replicas has not yet received
+            %% or when there are no remote replicas
+            %% Since with current setup there is no mechanism
+            %% to distinguish these, we assume the second case
+            Now = dc_utilities:now_microsec() - ?OLD_SS_MICROSEC,
+            {ok, Now, StableSnapshot};
+        _ ->
+            %% This is correct only if stablesnapshot has entries for
+            %% all DCs. Inorder to check that we need to configure the
+            %% number of DCs in advance, which is not possible now.
+            ListTime = orddict:fold(
+                fun(_Key, Value, Acc) ->
+                    [Value | Acc]
+                end, [], StableSnapshot),
+            GST = lists:min(ListTime),
+            {ok, GST, StableSnapshot}
+    end.
+
 -spec get_clock_of_dc(any(), vectorclock()) -> non_neg_integer().
 get_clock_of_dc(Key, VectorClock) ->
-  case dict:find(Key, VectorClock) of
-    {ok, Value} -> Value;
-    error -> 0
-  end.
+    case orddict:find(Key, VectorClock) of
+        {ok, Value} -> Value;
+        error -> 0
+    end.
 
 -spec set_clock_of_dc(any(), non_neg_integer(), vectorclock()) -> vectorclock().
 set_clock_of_dc(Key, Value, VectorClock) ->
-  dict:store(Key, Value, VectorClock).
+    case is_atom(VectorClock) of
+        true -> orddict:store(Key, Value, []);
+        false -> orddict:store(Key, Value, VectorClock)
+    end.
+
+-spec create_commit_vector_clock(any(), non_neg_integer(), vectorclock()) -> vectorclock().
+create_commit_vector_clock(Key, Value, VectorClock)->
+set_clock_of_dc(Key, Value, VectorClock).
 
 -spec from_list([{any(), non_neg_integer()}]) -> vectorclock().
 from_list(List) ->
-    dict:from_list(List).
+    orddict:from_list(List).
 
 -spec max([vectorclock()]) -> vectorclock().
 max([]) -> new();
 max([V]) -> V;
 max([V1,V2|T]) -> max([merge(fun erlang:max/2, V1, V2)|T]).
+
+-spec max_vc(vectorclock(), vectorclock()) -> vectorclock().
+max_vc(V, V)-> V;
+max_vc(V, ignore)-> V;
+max_vc(V, undefined)-> V;
+max_vc(ignore, V)-> V;
+max_vc(undefined, V)-> V;
+max_vc(V1, V2) ->
+    case ge(V1, V2) of
+        true ->
+            V1;
+        false ->
+            V2
+    end.
+
+-spec min_vc(vectorclock(), vectorclock()) -> vectorclock().
+min_vc(V, ignore)-> V;
+min_vc(ignore, V)-> V;
+min_vc(V1, V2) ->
+    case ge(V1, V2) of
+        true ->
+            V2;
+        false ->
+            V1
+    end.
 
 -spec min([vectorclock()]) -> vectorclock().
 min([]) -> new();
@@ -75,24 +212,24 @@ min([V1,V2|T]) -> min([merge(fun erlang:min/2, V1, V2)|T]).
 
 -spec merge(fun((non_neg_integer(), non_neg_integer()) -> non_neg_integer()), vectorclock(), vectorclock()) -> vectorclock().
 merge(F, V1, V2) ->
-  AllDCs = dict:fetch_keys(V1) ++ dict:fetch_keys(V2),
-  Func = fun(DC) ->
-    A = get_clock_of_dc(DC, V1),
-    B = get_clock_of_dc(DC, V2),
-    {DC, F(A, B)}
-  end,
-  from_list(lists:map(Func, AllDCs)).
+    AllDCs = orddict:fetch_keys(V1) ++ orddict:fetch_keys(V2),
+    Func = fun(DC) ->
+        A = get_clock_of_dc(DC, V1),
+        B = get_clock_of_dc(DC, V2),
+        {DC, F(A, B)}
+           end,
+    from_list(lists:map(Func, AllDCs)).
 
 -spec for_all_keys(fun((non_neg_integer(), non_neg_integer()) -> boolean()), vectorclock(), vectorclock()) -> boolean().
 for_all_keys(F, V1, V2) ->
-  %% We could but do not care about duplicate DC keys - finding duplicates is not worth the effort
-  AllDCs = dict:fetch_keys(V1) ++ dict:fetch_keys(V2),
-  Func = fun(DC) ->
-    A = get_clock_of_dc(DC, V1),
-    B = get_clock_of_dc(DC, V2),
-    F(A, B)
-  end,
-  lists:all(Func, AllDCs).
+    %% We could but do not care about duplicate DC keys - finding duplicates is not worth the effort
+    AllDCs = orddict:fetch_keys(V1) ++ orddict:fetch_keys(V2),
+    Func = fun(DC) ->
+        A = get_clock_of_dc(DC, V1),
+        B = get_clock_of_dc(DC, V2),
+        F(A, B)
+           end,
+    lists:all(Func, AllDCs).
 
 -spec eq(vectorclock(), vectorclock()) -> boolean().
 eq(V1, V2) -> for_all_keys(fun(A, B) -> A == B end, V1, V2).
@@ -117,7 +254,7 @@ strict_le(V1,V2) -> le(V1,V2) and (not eq(V1,V2)).
 
 to_json(VectorClock) ->
     Elements = 
-	dict:fold(fun(DCID,Time,Acc) ->
+	orddict:fold(fun(DCID,Time,Acc) ->
 			  Acc++[[{dcid_and_time,
 				  [json_utilities:dcid_to_json(DCID),Time]}]]
 		     end,[],VectorClock),
