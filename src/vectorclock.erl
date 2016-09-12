@@ -28,9 +28,6 @@
 -export([
     get_clock_of_dc/2,
     set_clock_of_dc/3,
-    get_stable_snapshot/0,
-    get_scalar_stable_time/0,
-    get_partition_snapshot/1,
     create_commit_vector_clock/3,
     from_list/1,
     new/0,
@@ -50,7 +47,7 @@
     erase/2,
     map/2,
     max_vc/2,
-    min_vc/2]).
+    min_vc/2, to_json/1, from_json/1]).
 
 -export_type([vectorclock/0]).
 
@@ -76,82 +73,6 @@ erase(Key, Orddict1)->
 
 map(Fun, Orddict1) ->
     orddict:map(Fun, Orddict1).
-
-%% @doc get_stable_snapshot: Returns stable snapshot time
-%% in the current DC. stable snapshot time is the snapshot available at
-%% in all partitions
--spec get_stable_snapshot() -> {ok, snapshot_time()}.
-get_stable_snapshot() ->
-    case meta_data_sender:get_merged_data(stable) of
-        undefined ->
-            %% The snapshot isn't ready yet, need to wait for startup
-            timer:sleep(10),
-            get_stable_snapshot();
-        SS ->
-            case application:get_env(antidote, txn_prot) of
-                {ok, Prot} when ((Prot == clocksi) orelse (Prot == physics))->
-                    %% This is fine if transactions coordinators exists on the ring (i.e. they have access
-                    %% to riak core meta-data) otherwise will have to change this
-                    {ok, SS};
-                {ok, gr} ->
-                    %% For gentlerain use the same format as clocksi
-                    %% But, replicate GST to all entries in the orddict
-                    StableSnapshot = SS,
-                    case orddict:size(StableSnapshot) of
-                        0 ->
-                            {ok, StableSnapshot};
-                        _ ->
-                            ListTime = vectorclock:fold(
-                                fun(_Key, Value, Acc) ->
-                                    [Value | Acc]
-                                end, [], StableSnapshot),
-                            GST = lists:min(ListTime),
-                            {ok, orddict:map(
-                                fun(_K, _V) ->
-                                    GST
-                                end,
-                                StableSnapshot)}
-                    end
-            end
-    end.
-
--spec get_partition_snapshot(partition_id()) -> snapshot_time().
-get_partition_snapshot(Partition) ->
-    case meta_data_sender:get_meta_dict(stable, Partition) of
-        undefined ->
-            %% The partition isn't ready yet, wait for startup
-            timer:sleep(10),
-            get_partition_snapshot(Partition);
-        SS ->
-            SS
-    end.
-
-%% Returns the minimum value in the stable vector snapshot time
-%% Useful for gentlerain protocol.
--spec get_scalar_stable_time() -> {ok, non_neg_integer(), vectorclock()}.
-get_scalar_stable_time() ->
-    {ok, StableSnapshot} = get_stable_snapshot(),
-    %% orddict:is_empty/1 is not available, hence using orddict:size/1
-    %% to check whether it is empty
-    case orddict:size(StableSnapshot) of
-        0 ->
-            %% This case occur when updates from remote replicas has not yet received
-            %% or when there are no remote replicas
-            %% Since with current setup there is no mechanism
-            %% to distinguish these, we assume the second case
-            Now = dc_utilities:now_microsec() - ?OLD_SS_MICROSEC,
-            {ok, Now, StableSnapshot};
-        _ ->
-            %% This is correct only if stablesnapshot has entries for
-            %% all DCs. Inorder to check that we need to configure the
-            %% number of DCs in advance, which is not possible now.
-            ListTime = orddict:fold(
-                fun(_Key, Value, Acc) ->
-                    [Value | Acc]
-                end, [], StableSnapshot),
-            GST = lists:min(ListTime),
-            {ok, GST, StableSnapshot}
-    end.
 
 -spec get_clock_of_dc(any(), vectorclock()) -> non_neg_integer().
 get_clock_of_dc(Key, VectorClock) ->

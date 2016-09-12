@@ -31,7 +31,7 @@
 
 -export([new/0,
 	 get_smaller/2,
-     is_causally_compatible/4,
+	 get_smaller_from_id/3,
 	 insert/3,
 	 insert_bigger/3,
 	 sublist/3,
@@ -50,18 +50,6 @@
 new() ->
     {[],0}.
 
-is_causally_compatible(CommitClock, CommitTimeLowbound, DepClock, DepUpbound) ->
-    case ((CommitTimeLowbound == undefined) or (DepUpbound == undefined) or
-            (CommitTimeLowbound == []) or (DepUpbound == [])) of
-        true ->
-            true;
-        false ->
-%%            lager:info("CommitClock= ~p~n CommitTimeLowbound= ~p~n, DepClock = ~p~n, DepUpbound = ~p~n",
-%%                [CommitClock,CommitTimeLowbound, DepClock, DepUpbound]),
-            vectorclock:ge(CommitClock, CommitTimeLowbound) and vectorclock:le(DepClock, DepUpbound)
-    end.
-
-
 -spec get_smaller(vectorclock(),vector_orddict()) -> {undefined | {vectorclock(),term()},boolean()}.
 get_smaller(Vector,{List,_Size}) ->
     get_smaller_internal(Vector,List,true).
@@ -72,7 +60,7 @@ get_smaller_internal(_Vector,[],IsFirst) ->
 get_smaller_internal(Vector,[{FirstClock,FirstVal}|Rest],IsFirst) ->
     case vectorclock:le(FirstClock,Vector) of
 	true ->
-	    {{FirstVal, FirstClock},IsFirst};
+	    {{FirstClock,FirstVal},IsFirst};
 	false ->
 	    get_smaller_internal(Vector,Rest,false)
     end.
@@ -202,15 +190,15 @@ vector_orddict_insert_bigger_test() ->
     Vdict0 = vector_orddict:new(),
     %% Insert to empty dict
     CT1 = vectorclock:from_list([{dc1,4},{dc2,4}]),
-    Vdict1 = vector_orddict:insert_bigger(CT1, 1,Vdict0, clocksi),
+    Vdict1 = vector_orddict:insert_bigger(CT1, 1,Vdict0),
     ?assertEqual(1,vector_orddict:size(Vdict1)),
     %% Should not insert because smaller
     CT2 = vectorclock:from_list([{dc1,3},{dc2,3}]),
-    Vdict2 = vector_orddict:insert_bigger(CT2, 2, Vdict1, clocksi),
+    Vdict2 = vector_orddict:insert_bigger(CT2, 2, Vdict1),
     ?assertEqual(1,vector_orddict:size(Vdict2)),
     %% Should insert because bigger
     CT3 = vectorclock:from_list([{dc1,6},{dc2,10}]),
-    Vdict3 = vector_orddict:insert_bigger(CT3, 3, Vdict2, clocksi),
+    Vdict3 = vector_orddict:insert_bigger(CT3, 3, Vdict2),
     ?assertEqual(2,vector_orddict:size(Vdict3)).
 
 
