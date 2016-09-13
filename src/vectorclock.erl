@@ -30,6 +30,8 @@
     set_clock_of_dc/3,
     create_commit_vector_clock/3,
     from_list/1,
+    from_dict/1,
+    to_dict/1,
     new/0,
     eq/2,
     lt/2,
@@ -54,6 +56,12 @@
 -spec new() -> vectorclock().
 new() ->
     orddict:new().
+
+to_dict(VC) ->
+    lists:to_dict(VC).
+
+from_dict(Dict) ->
+    lists:from_dict(Dict).
 
 fold(F, Acc, [{Key,Val}|D]) ->
     orddict:fold(F, F(Key, Val, Acc), D);
