@@ -58,10 +58,10 @@ new() ->
     orddict:new().
 
 to_dict(VC) ->
-    lists:to_dict(VC).
+    dict:from_list(VC).
 
 from_dict(Dict) ->
-    lists:from_dict(Dict).
+    from_list(dict:to_list(Dict)).
 
 fold(F, Acc, [{Key,Val}|D]) ->
     orddict:fold(F, F(Key, Val, Acc), D);
