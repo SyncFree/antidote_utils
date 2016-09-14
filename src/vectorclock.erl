@@ -32,6 +32,7 @@
     from_list/1,
     from_dict/1,
     to_dict/1,
+    size/1,
     new/0,
     eq/2,
     lt/2,
@@ -62,6 +63,9 @@ to_dict(VC) ->
 
 from_dict(Dict) ->
     from_list(dict:to_list(Dict)).
+
+size(VC) ->
+    orddict:size(VC).
 
 fold(F, Acc, [{Key,Val}|D]) ->
     orddict:fold(F, F(Key, Val, Acc), D);
