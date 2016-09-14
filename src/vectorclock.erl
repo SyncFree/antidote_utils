@@ -50,7 +50,7 @@
     erase/2,
     map/2,
     max_vc/2,
-    merge/3,
+%%    merge/3,
     min_vc/2, to_json/1, from_json/1]).
 
 -export_type([vectorclock/0]).
@@ -150,16 +150,13 @@ min([V1,V2|T]) -> min([merge(fun erlang:min/2, V1, V2)|T]).
 
 -spec merge(fun((non_neg_integer(), non_neg_integer()) -> non_neg_integer()), vectorclock(), vectorclock()) -> vectorclock().
 merge(F, V1, V2) ->
-    orddict:merge(F, V1, V2).
-    
-%%
-%%    AllDCs = orddict:fetch_keys(V1) ++ orddict:fetch_keys(V2),
-%%    Func = fun(DC) ->
-%%        A = get_clock_of_dc(DC, V1),
-%%        B = get_clock_of_dc(DC, V2),
-%%        {DC, F(A, B)}
-%%           end,
-%%    from_list(lists:map(Func, AllDCs)).
+    AllDCs = orddict:fetch_keys(V1) ++ orddict:fetch_keys(V2),
+    Func = fun(DC) ->
+        A = get_clock_of_dc(DC, V1),
+        B = get_clock_of_dc(DC, V2),
+        {DC, F(A, B)}
+           end,
+    from_list(lists:map(Func, AllDCs)).
 
 -spec for_all_keys(fun((non_neg_integer(), non_neg_integer()) -> boolean()), vectorclock(), vectorclock()) -> boolean().
 for_all_keys(F, V1, V2) ->
