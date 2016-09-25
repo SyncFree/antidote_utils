@@ -63,7 +63,7 @@ to_dict(VC) -> %VC.
     orddict:from_list(VC).
 
 from_dict(Dict) -> %Dict.
-    from_list(orddict:to_list(Dict)).
+    from_list(dict:to_list(Dict)).
 
 size(VC) ->
     orddict:size(VC).
