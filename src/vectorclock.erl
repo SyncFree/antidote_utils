@@ -57,39 +57,39 @@
 
 -spec new() -> vectorclock().
 new() ->
-    dict:new().
+    orddict:new().
 
-to_dict(VC) -> VC.
-%%    dict:from_list(VC).
+to_dict(VC) -> %VC.
+    orddict:from_list(VC).
 
-from_dict(Dict) -> Dict.
-%%    from_list(dict:to_list(Dict)).
+from_dict(Dict) -> %Dict.
+    from_list(orddict:to_list(Dict)).
 
 size(VC) ->
-    dict:size(VC).
+    orddict:size(VC).
 
 fold(F, Acc, [{Key,Val}|D]) ->
-    dict:fold(F, F(Key, Val, Acc), D);
+    orddict:fold(F, F(Key, Val, Acc), D);
 fold(F, Acc, []) when is_function(F, 3) -> Acc.
 
 find(Key, Orddict) ->
-    dict:find(Key, Orddict).
+    orddict:find(Key, Orddict).
 
 store(Key, Value, Orddict1) ->
-    dict:store(Key, Value, Orddict1).
+    orddict:store(Key, Value, Orddict1).
 
 fetch(Key, Orddict)->
-    dict:fetch(Key, Orddict).
+    orddict:fetch(Key, Orddict).
 
 erase(Key, Orddict1)->
-    dict:erase(Key, Orddict1).
+    orddict:erase(Key, Orddict1).
 
 map(Fun, Orddict1) ->
-    dict:map(Fun, Orddict1).
+    orddict:map(Fun, Orddict1).
 
 -spec get_clock_of_dc(any(), vectorclock()) -> non_neg_integer().
 get_clock_of_dc(Key, VectorClock) ->
-    case dict:find(Key, VectorClock) of
+    case orddict:find(Key, VectorClock) of
         {ok, Value} -> Value;
         error -> 0
     end.
@@ -97,8 +97,8 @@ get_clock_of_dc(Key, VectorClock) ->
 -spec set_clock_of_dc(any(), non_neg_integer(), vectorclock()) -> vectorclock().
 set_clock_of_dc(Key, Value, VectorClock) ->
     case is_atom(VectorClock) of
-        true -> dict:store(Key, Value, new());
-        false -> dict:store(Key, Value, VectorClock)
+        true -> orddict:store(Key, Value, new());
+        false -> orddict:store(Key, Value, VectorClock)
     end.
 
 -spec create_commit_vector_clock(any(), non_neg_integer(), vectorclock()) -> vectorclock().
@@ -107,7 +107,7 @@ create_commit_vector_clock(Key, Value, VectorClock)->
 
 -spec from_list([{any(), non_neg_integer()}]) -> vectorclock().
 from_list(List) ->
-    dict:from_list(List).
+    orddict:from_list(List).
 
 -spec max([vectorclock()]) -> vectorclock().
 max([]) -> new();
@@ -150,7 +150,7 @@ min([V1,V2|T]) -> min([merge(fun erlang:min/2, V1, V2)|T]).
 
 -spec merge(fun((non_neg_integer(), non_neg_integer()) -> non_neg_integer()), vectorclock(), vectorclock()) -> vectorclock().
 merge(F, V1, V2) ->
-    AllDCs = dict:fetch_keys(V1) ++ dict:fetch_keys(V2),
+    AllDCs = orddict:fetch_keys(V1) ++ orddict:fetch_keys(V2),
     Func = fun(DC) ->
         A = get_clock_of_dc(DC, V1),
         B = get_clock_of_dc(DC, V2),
@@ -161,7 +161,7 @@ merge(F, V1, V2) ->
 -spec for_all_keys(fun((non_neg_integer(), non_neg_integer()) -> boolean()), vectorclock(), vectorclock()) -> boolean().
 for_all_keys(F, V1, V2) ->
     %% We could but do not care about duplicate DC keys - finding duplicates is not worth the effort
-    AllDCs = dict:fetch_keys(V1) ++ dict:fetch_keys(V2),
+    AllDCs = orddict:fetch_keys(V1) ++ orddict:fetch_keys(V2),
     Func = fun(DC) ->
         A = get_clock_of_dc(DC, V1),
         B = get_clock_of_dc(DC, V2),
@@ -192,7 +192,7 @@ strict_le(V1,V2) -> le(V1,V2) and (not eq(V1,V2)).
 
 to_json(VectorClock) ->
     Elements =
-        dict:fold(fun(DCID,Time,Acc) ->
+        orddict:fold(fun(DCID,Time,Acc) ->
             Acc++[[{dcid_and_time,
                 [json_utilities:dcid_to_json(DCID),Time]}]]
         end,[],VectorClock),
