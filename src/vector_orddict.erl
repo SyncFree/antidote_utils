@@ -24,7 +24,10 @@
 -include_lib("eunit/include/eunit.hrl").
 -endif.
 
--type vector_orddict() :: {[{vectorclock(),term()}],non_neg_integer()}.
+-type vector_orddict() :: %% Cure (clocksi)
+							{[{vectorclock(),term()}],non_neg_integer()}
+						  %% PhysiCS
+							| {[{{vectorclock(),vectorclock(),vectorclock()},term()}],non_neg_integer()}.
 -type nonempty_vector_orddict() :: {[{vectorclock(),term()}, ...],non_neg_integer()}.
 
 -export_type([vector_orddict/0,nonempty_vector_orddict/0]).
@@ -52,15 +55,19 @@ new() ->
 
 -spec get_smaller(vectorclock(),vector_orddict()) -> {undefined | {vectorclock(),term()},boolean()}.
 get_smaller(Vector,{List,_Size}) ->
-    get_smaller_internal(Vector,List,true).
+	get_smaller_internal(Vector,List,true).
 
 -spec get_smaller_internal(vectorclock(),[{vectorclock(),term()}],boolean()) -> {undefined | {vectorclock(),term()},boolean()}.
 get_smaller_internal(_Vector,[],IsFirst) ->
     {undefined,IsFirst};
-get_smaller_internal(Vector,[{FirstClock,FirstVal}|Rest],IsFirst) ->
+get_smaller_internal(Vector,[{FirstItem,FirstVal}|Rest],IsFirst) ->
+	FirstClock = case FirstItem of
+		{CommitVC, _DepVC, _ReadTime} -> CommitVC;
+		CommitVC -> CommitVC
+	end,
     case vectorclock:le(FirstClock,Vector) of
 	true ->
-	    {{FirstClock,FirstVal},IsFirst};
+	    {{FirstItem,FirstVal},IsFirst};
 	false ->
 	    get_smaller_internal(Vector,Rest,false)
     end.
