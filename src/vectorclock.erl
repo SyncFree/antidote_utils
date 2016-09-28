@@ -177,6 +177,7 @@ merge(F, V1, V2) ->
 -spec for_all_keys(fun((non_neg_integer(), non_neg_integer()) -> boolean()), vectorclock(), vectorclock()) -> boolean().
 for_all_keys(F, V1, V2) ->
     %% We could but do not care about duplicate DC keys - finding duplicates is not worth the effort
+    lager:debug("~n V1: ~p~nV2 ~p", [V1, V2]),
     AllDCs = dict:fetch_keys(V1) ++ dict:fetch_keys(V2),
     Func = fun(DC) ->
         A = get_clock_of_dc(DC, V1),
