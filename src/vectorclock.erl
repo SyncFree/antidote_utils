@@ -28,7 +28,6 @@
 -export([
     get_clock_of_dc/2,
     set_clock_of_dc/3,
-%%    create_commit_vector_clock/3,
     from_list/1,
     from_dict/1,
     to_dict/1,
@@ -44,13 +43,11 @@
     strict_le/2,
     max/1,
     min/1,
-    fold/3,
     store/3,
     fetch/2,
     erase/2,
     map/2,
     max_vc/2,
-    %%    merge/3,
     min_vc/2, to_json/1, from_json/1]).
 
 -export_type([vectorclock/0]).
@@ -67,10 +64,6 @@ from_dict(Dict) -> Dict.
 
 size(VC) ->
     dict:size(VC).
-
-fold(F, Acc, [{Key,Val}|D]) ->
-    dict:fold(F, F(Key, Val, Acc), D);
-fold(F, Acc, []) when is_function(F, 3) -> Acc.
 
 find(Key, Orddict) ->
     dict:find(Key, Orddict).
@@ -96,14 +89,7 @@ get_clock_of_dc(Key, VectorClock) ->
 
 -spec set_clock_of_dc(any(), non_neg_integer(), vectorclock()) -> vectorclock().
 set_clock_of_dc(Key, Value, VectorClock) ->
-    case is_atom(VectorClock) of
-        true -> dict:store(Key, Value, new());
-        false -> dict:store(Key, Value, VectorClock)
-    end.
-
-%%-spec create_commit_vector_clock(any(), non_neg_integer(), vectorclock()) -> vectorclock().
-%%create_commit_vector_clock(Key, Value, VectorClock)->
-%%    set_clock_of_dc(Key, Value, VectorClock).
+        dict:store(Key, Value, VectorClock).
 
 -spec from_list([{any(), non_neg_integer()}]) -> vectorclock().
 from_list(List) ->
@@ -116,12 +102,12 @@ max([V1,V2|T]) -> max([merge(fun erlang:max/2, V1, V2)|T]).
 
 -spec max_vc(vectorclock(), vectorclock()) -> vectorclock().
 max_vc(V, V)-> V;
-max_vc(V, ignore)-> V;
-max_vc(V, undefined)-> V;
-max_vc(ignore, V)-> V;
-max_vc(undefined, V)-> V;
-max_vc([], V)-> V;
-max_vc(V, [])-> V;
+%%max_vc(V, ignore)-> V;
+%%max_vc(V, undefined)-> V;
+%%max_vc(ignore, V)-> V;
+%%max_vc(undefined, V)-> V;
+%%max_vc([], V)-> V;
+%%max_vc(V, [])-> V;
 max_vc(V1, V2) ->
     NewVC = new(),
     case V1 of
