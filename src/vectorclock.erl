@@ -126,8 +126,6 @@ max_vc(V1, V2) ->
 
 
 -spec min_vc(vectorclock(), vectorclock()) -> vectorclock().
-min_vc(V, ignore)-> V;
-min_vc(ignore, V)-> V;
 min_vc(V1, V2) ->
     NewVC = new(),
     
