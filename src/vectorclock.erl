@@ -166,25 +166,24 @@ min([V1,V2|T]) -> min([merge(fun erlang:min/2, V1, V2)|T]).
 
 -spec merge(fun((non_neg_integer(), non_neg_integer()) -> non_neg_integer()), vectorclock(), vectorclock()) -> vectorclock().
 merge(F, V1, V2) ->
-    AllDCs = dict:fetch_keys(V1) ++ dict:fetch_keys(V2),
-    Func = fun(DC) ->
-        A = get_clock_of_dc(DC, V1),
-        B = get_clock_of_dc(DC, V2),
-        {DC, F(A, B)}
-    end,
-    from_list(lists:map(Func, AllDCs)).
+  AllDCs = dict:fetch_keys(V1) ++ dict:fetch_keys(V2),
+  Func = fun(DC) ->
+    A = get_clock_of_dc(DC, V1),
+    B = get_clock_of_dc(DC, V2),
+    {DC, F(A, B)}
+  end,
+  from_list(lists:map(Func, AllDCs)).
 
 -spec for_all_keys(fun((non_neg_integer(), non_neg_integer()) -> boolean()), vectorclock(), vectorclock()) -> boolean().
 for_all_keys(F, V1, V2) ->
-    %% We could but do not care about duplicate DC keys - finding duplicates is not worth the effort
-%%    lager:debug("~n V1: ~p~nV2 ~p", [V1, V2]),
-    AllDCs = dict:fetch_keys(V1) ++ dict:fetch_keys(V2),
-    Func = fun(DC) ->
-        A = get_clock_of_dc(DC, V1),
-        B = get_clock_of_dc(DC, V2),
-        F(A, B)
-    end,
-    lists:all(Func, AllDCs).
+  %% We could but do not care about duplicate DC keys - finding duplicates is not worth the effort
+  AllDCs = dict:fetch_keys(V1) ++ dict:fetch_keys(V2),
+  Func = fun(DC) ->
+    A = get_clock_of_dc(DC, V1),
+    B = get_clock_of_dc(DC, V2),
+    F(A, B)
+  end,
+  lists:all(Func, AllDCs).
 
 -spec eq(vectorclock(), vectorclock()) -> boolean().
 eq(V1, V2) -> for_all_keys(fun(A, B) -> A == B end, V1, V2).
@@ -209,17 +208,17 @@ strict_le(V1,V2) -> le(V1,V2) and (not eq(V1,V2)).
 
 to_json(VectorClock) ->
     Elements =
-        dict:fold(fun(DCID,Time,Acc) ->
-            Acc++[[{dcid_and_time,
-                [json_utilities:dcid_to_json(DCID),Time]}]]
-        end,[],VectorClock),
+	dict:fold(fun(DCID,Time,Acc) ->
+			  Acc++[[{dcid_and_time,
+				  [json_utilities:dcid_to_json(DCID),Time]}]]
+		     end,[],VectorClock),
     [{vectorclock,Elements}].
 
 from_json([{vectorclock,Elements}]) ->
     List =
-        lists:map(fun([{dcid_and_time,[JSONDCID,Time]}]) ->
-            {json_utilities:dcid_from_json(JSONDCID),Time}
-        end,Elements),
+	lists:map(fun([{dcid_and_time,[JSONDCID,Time]}]) ->
+			 {json_utilities:dcid_from_json(JSONDCID),Time}
+		 end,Elements),
     from_list(List).
 
 -ifdef(TEST).
@@ -241,38 +240,38 @@ vectorclock_test() ->
     ?assertEqual(ge(V1,V5), false).
 
 vectorclock_max_test() ->
-    V1 = vectorclock:from_list([{1, 5}, {2, 4}]),
-    V2 = vectorclock:from_list([{1, 6}, {2, 3}]),
-    V3 = vectorclock:from_list([{1, 3}, {3, 2}]),
-    
-    Expected12 = vectorclock:from_list([{1, 6}, {2, 4}]),
-    Expected23 = vectorclock:from_list([{1, 6}, {2, 3}, {3, 2}]),
-    Expected13 = vectorclock:from_list([{1, 5}, {2, 4}, {3, 2}]),
-    Expected123 = vectorclock:from_list([{1, 6}, {2, 4}, {3, 2}]),
-    Unexpected123 = vectorclock:from_list([{1, 5}, {2, 5}, {3, 5}]),
-    
-    ?assertEqual(eq(max([V1, V2]), Expected12), true),
-    ?assertEqual(eq(max([V2, V3]), Expected23), true),
-    ?assertEqual(eq(max([V1, V3]), Expected13), true),
-    ?assertEqual(eq(max([V1, V2, V3]), Expected123), true),
-    ?assertEqual(eq(max([V1, V2, V3]), Unexpected123), false).
+  V1 = vectorclock:from_list([{1, 5}, {2, 4}]),
+  V2 = vectorclock:from_list([{1, 6}, {2, 3}]),
+  V3 = vectorclock:from_list([{1, 3}, {3, 2}]),
+
+  Expected12 = vectorclock:from_list([{1, 6}, {2, 4}]),
+  Expected23 = vectorclock:from_list([{1, 6}, {2, 3}, {3, 2}]),
+  Expected13 = vectorclock:from_list([{1, 5}, {2, 4}, {3, 2}]),
+  Expected123 = vectorclock:from_list([{1, 6}, {2, 4}, {3, 2}]),
+  Unexpected123 = vectorclock:from_list([{1, 5}, {2, 5}, {3, 5}]),
+
+  ?assertEqual(eq(max([V1, V2]), Expected12), true),
+  ?assertEqual(eq(max([V2, V3]), Expected23), true),
+  ?assertEqual(eq(max([V1, V3]), Expected13), true),
+  ?assertEqual(eq(max([V1, V2, V3]), Expected123), true),
+  ?assertEqual(eq(max([V1, V2, V3]), Unexpected123), false).
 
 
 vectorclock_min_test() ->
-    V1 = vectorclock:from_list([{1, 5}, {2, 4}]),
-    V2 = vectorclock:from_list([{1, 6}, {2, 3}]),
-    V3 = vectorclock:from_list([{1, 3}, {3, 2}]),
-    
-    Expected12 = vectorclock:from_list([{1, 5}, {2, 3}]),
-    Expected23 = vectorclock:from_list([{1, 3}]),
-    Expected13 = vectorclock:from_list([{1, 3}]),
-    Expected123 = vectorclock:from_list([{1, 3}]),
-    Unexpected123 = vectorclock:from_list([{1, 3}, {2, 3}, {3, 2}]),
-    
-    ?assertEqual(eq(min([V1, V2]), Expected12), true),
-    ?assertEqual(eq(min([V2, V3]), Expected23), true),
-    ?assertEqual(eq(min([V1, V3]), Expected13), true),
-    ?assertEqual(eq(min([V1, V2, V3]), Expected123), true),
-    ?assertEqual(eq(min([V1, V2, V3]), Unexpected123), false).
+  V1 = vectorclock:from_list([{1, 5}, {2, 4}]),
+  V2 = vectorclock:from_list([{1, 6}, {2, 3}]),
+  V3 = vectorclock:from_list([{1, 3}, {3, 2}]),
+
+  Expected12 = vectorclock:from_list([{1, 5}, {2, 3}]),
+  Expected23 = vectorclock:from_list([{1, 3}]),
+  Expected13 = vectorclock:from_list([{1, 3}]),
+  Expected123 = vectorclock:from_list([{1, 3}]),
+  Unexpected123 = vectorclock:from_list([{1, 3}, {2, 3}, {3, 2}]),
+
+  ?assertEqual(eq(min([V1, V2]), Expected12), true),
+  ?assertEqual(eq(min([V2, V3]), Expected23), true),
+  ?assertEqual(eq(min([V1, V3]), Expected13), true),
+  ?assertEqual(eq(min([V1, V2, V3]), Expected123), true),
+  ?assertEqual(eq(min([V1, V2, V3]), Unexpected123), false).
 
 -endif.
