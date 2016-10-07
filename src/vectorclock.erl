@@ -47,8 +47,7 @@
     fetch/2,
     erase/2,
     map/2,
-    max_vc/2,
-    min_vc/2, to_json/1, from_json/1]).
+    to_json/1, from_json/1]).
 
 -export_type([vectorclock/0]).
 
