@@ -100,48 +100,6 @@ max([]) -> new();
 max([V]) -> V;
 max([V1,V2|T]) -> max([merge(fun erlang:max/2, V1, V2)|T]).
 
--spec max_vc(vectorclock(), vectorclock()) -> vectorclock().
-max_vc(V, V)-> V;
-%%max_vc(V, ignore)-> V;
-%%max_vc(V, undefined)-> V;
-%%max_vc(ignore, V)-> V;
-%%max_vc(undefined, V)-> V;
-%%max_vc([], V)-> V;
-%%max_vc(V, [])-> V;
-max_vc(V1, V2) ->
-    NewVC = new(),
-    case V1 of
-        NewVC -> V2;
-        _->
-            case V2 of
-                NewVC ->V1;
-                _-> case ge(V1, V2) of
-                    true ->
-                        V1;
-                    false ->
-                        V2
-                end
-            end
-    end.
-
-
--spec min_vc(vectorclock(), vectorclock()) -> vectorclock().
-min_vc(V1, V2) ->
-    NewVC = new(),
-    
-    case V1 of
-        NewVC -> V2;
-        _->
-            case V2 of
-                NewVC ->V1;
-                _-> case ge(V1, V2) of
-                    true ->
-                        V2;
-                    false ->
-                        V1
-                end
-            end
-    end.
 
 -spec min([vectorclock()]) -> vectorclock().
 min([]) -> new();
