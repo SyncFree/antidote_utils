@@ -62,7 +62,7 @@ get_smaller_internal(_Vector,[],IsFirst) ->
     {undefined,IsFirst};
 get_smaller_internal(Vector,[{FirstItem,FirstVal}|Rest],IsFirst) ->
 	FirstClock = case FirstItem of
-		{CommitVC, _DepVC, _ReadTime} -> CommitVC;
+		{_CommitVC, DepVC, _ReadTime} -> DepVC;
 		CommitVC -> CommitVC
 	end,
     case vectorclock:le(FirstClock,Vector) of

@@ -19,5 +19,5 @@
                           txid :: txid()}).
 
 -type vectorclock() :: vectorclock:vectorclock().
--type txid() :: #tx_id{} | no_txn_inserting_from_log.
+-type txid() :: #tx_id{} | no_txn_inserting_from_log | .
 -type clocksi_payload() :: #clocksi_payload{}.
