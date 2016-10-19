@@ -117,19 +117,14 @@ insert_bigger_internal(Vector,Val,[],0) ->
 	{[{Vector,Val}],1};
 
 insert_bigger_internal(Vector,Val,[{FirstClock,FirstVal}|Rest],Size) ->
-  lager:info("~nVector ~n~p",[Vector]),
-  lager:info("~nFirstclock ~n~p",[FirstClock]),
-
-  ClockToCompare=case FirstVal of
+  ClockToCompare=case FirstClock of
                    {CommitVC, _DepVC, _ReadTime}-> %% physics
-                     lager:info("physics"),
                      CommitVC;
                    VClock1->
                      VClock1
                  end,
   ClockToCompare2=case Vector of
                     {CVC, _DVC, _RT}-> %% physics
-                      lager:info("physics"),
                       CVC;
                     VC2->
                       VC2
