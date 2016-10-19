@@ -134,6 +134,8 @@ insert_bigger_internal(Vector,Val,[{FirstClock,FirstVal}|Rest],Size) ->
                     VC2->
                       VC2
                   end,
+  lager:info("~n ClockToCompare2 ~n~p",[ClockToCompare2]),
+  lager:info("~n ClockToCompare ~n~p",[ClockToCompare]),
   case not vectorclock:le(ClockToCompare2, ClockToCompare) of
     true->
       {[{Vector, Val}|[{FirstClock, FirstVal}|Rest]], Size+1};
