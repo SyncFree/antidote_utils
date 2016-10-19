@@ -29,6 +29,7 @@
     get_clock_of_dc/2,
     set_clock_of_dc/3,
     from_list/1,
+    to_list/1,
     from_dict/1,
     to_dict/1,
     size/1,
@@ -93,6 +94,10 @@ set_clock_of_dc(Key, Value, VectorClock) ->
 -spec from_list([{any(), non_neg_integer()}]) -> vectorclock().
 from_list(List) ->
     dict:from_list(List).
+
+-spec to_list(vectorclock()) -> [{any(), non_neg_integer()}].
+to_list(Dict) ->
+    dict:to_list(Dict).
 
 -spec max([vectorclock()]) -> vectorclock().
 max([]) -> new();
