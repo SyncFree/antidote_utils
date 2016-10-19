@@ -118,8 +118,8 @@ insert_bigger_internal(Vector,Val,[],0) ->
 
 insert_bigger_internal(Vector,Val,[{FirstClock,FirstVal}|Rest],Size) ->
 	FirstClock=case FirstVal of
-		{_CommitVC, DepVC, _ReadTime}->
-			DepVC;
+		{CommitVC, _DepVC, _ReadTime}->
+			CommitVC;
 		CommitVC->
 			CommitVC
 	end,
