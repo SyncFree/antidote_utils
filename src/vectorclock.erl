@@ -35,8 +35,8 @@
          all_dots_greater/2,
          le/2,
          ge/2,
-         strict_ge/2,
-         strict_le/2,
+         gt/2,
+         lt/2,
          max/1,
          min/1,
 	 to_json/1,
@@ -109,11 +109,11 @@ all_dots_smaller(V1, V2) -> for_all_keys(fun(A, B) -> A < B end, V1, V2).
 -spec all_dots_greater(vectorclock(), vectorclock()) -> boolean().
 all_dots_greater(V1, V2) -> for_all_keys(fun(A, B) -> A > B end, V1, V2).
 
--spec strict_ge(vectorclock(), vectorclock()) -> boolean().
-strict_ge(V1,V2) -> ge(V1,V2) and (not eq(V1,V2)).
+-spec gt(vectorclock(), vectorclock()) -> boolean().
+gt(V1,V2) -> ge(V1,V2) and (not eq(V1,V2)).
 
--spec strict_le(vectorclock(), vectorclock()) -> boolean().
-strict_le(V1,V2) -> le(V1,V2) and (not eq(V1,V2)).
+-spec lt(vectorclock(), vectorclock()) -> boolean().
+lt(V1,V2) -> le(V1,V2) and (not eq(V1,V2)).
 
 to_json(VectorClock) ->
     Elements = 
@@ -141,8 +141,8 @@ vectorclock_test() ->
     ?assertEqual(all_dots_greater(V1,V2), true),
     ?assertEqual(all_dots_smaller(V2,V1), true),
     ?assertEqual(all_dots_greater(V1,V3), false),
-    ?assertEqual(strict_ge(V1,V3), true),
-    ?assertEqual(strict_ge(V1,V1), false),
+    ?assertEqual(gt(V1,V3), true),
+    ?assertEqual(gt(V1,V1), false),
     ?assertEqual(ge(V1,V4), false),
     ?assertEqual(le(V1,V4), false),
     ?assertEqual(eq(V1,V4), false),
