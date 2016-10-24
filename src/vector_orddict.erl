@@ -53,23 +53,23 @@
 new() ->
     {[],0}.
 
--spec get_smaller(vectorclock(),vector_orddict()) -> {undefined | {vectorclock(),term()},boolean()}.
+-spec get_smaller(vectorclock(),vector_orddict()) -> {undefined | {vectorclock(),term()},non_neg_integer()}.
 get_smaller(Vector,{List,_Size}) ->
-	get_smaller_internal(Vector,List,true).
+	get_smaller_internal(Vector,List,1).
 
--spec get_smaller_internal(vectorclock(),[{vectorclock(),term()}],boolean()) -> {undefined | {vectorclock(),term()},boolean()}.
-get_smaller_internal(_Vector,[],IsFirst) ->
-    {undefined,IsFirst};
-get_smaller_internal(Vector,[{FirstItem,FirstVal}|Rest],IsFirst) ->
+-spec get_smaller_internal(vectorclock(),[{vectorclock(),term()}],non_neg_integer()) -> {undefined | {vectorclock(),term()},boolean()}.
+get_smaller_internal(_Vector,[],NumberOfSnapshotReturned) ->
+    {undefined,NumberOfSnapshotReturned};
+get_smaller_internal(Vector,[{FirstItem,FirstVal}|Rest],NumberOfSnapshotReturned) ->
 	FirstClock = case FirstItem of
 		{_CommitVC, DepVC, _ReadTime} -> DepVC;
 		CommitVC -> CommitVC
 	end,
     case vectorclock:le(FirstClock,Vector) of
 	true ->
-	    {{FirstItem,FirstVal},IsFirst};
+	    {{FirstItem,FirstVal},NumberOfSnapshotReturned};
 	false ->
-	    get_smaller_internal(Vector,Rest,false)
+	    get_smaller_internal(Vector,Rest,NumberOfSnapshotReturned+1)
     end.
 
 -spec get_smaller_from_id(term(),clock_time(),vector_orddict()) -> undefined | {vectorclock(),term()}.
@@ -197,11 +197,11 @@ vector_orddict_get_smaller_test() ->
     Vdict3 = vector_orddict:insert(CT3, 3, Vdict2),
     
     %% Check you get the correct smaller snapshot
-    ?assertEqual({undefined,false}, vector_orddict:get_smaller(vectorclock:from_list([{dc1,0},{dc2,0}]),Vdict3)),
-    ?assertEqual({undefined,false}, vector_orddict:get_smaller(vectorclock:from_list([{dc1,1},{dc2,6}]),Vdict3)),
-    ?assertEqual({{CT1,1},false}, vector_orddict:get_smaller(vectorclock:from_list([{dc1,5},{dc2,5}]),Vdict3)),
-    ?assertEqual({{CT2,2},true}, vector_orddict:get_smaller(vectorclock:from_list([{dc1,9},{dc2,9}]),Vdict3)),
-    ?assertEqual({{CT3,3},false}, vector_orddict:get_smaller(vectorclock:from_list([{dc1,3},{dc2,11}]),Vdict3)).
+    ?assertEqual({undefined,4}, vector_orddict:get_smaller(vectorclock:from_list([{dc1,0},{dc2,0}]),Vdict3)),
+    ?assertEqual({undefined,4}, vector_orddict:get_smaller(vectorclock:from_list([{dc1,1},{dc2,6}]),Vdict3)),
+    ?assertEqual({{CT1,1},2}, vector_orddict:get_smaller(vectorclock:from_list([{dc1,5},{dc2,5}]),Vdict3)),
+    ?assertEqual({{CT2,2},1}, vector_orddict:get_smaller(vectorclock:from_list([{dc1,9},{dc2,9}]),Vdict3)),
+    ?assertEqual({{CT3,3},3}, vector_orddict:get_smaller(vectorclock:from_list([{dc1,3},{dc2,11}]),Vdict3)).
     
 
 
