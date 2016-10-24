@@ -117,24 +117,24 @@ insert_bigger_internal(Vector,Val,[],0) ->
 	{[{Vector,Val}],1};
 
 insert_bigger_internal(Vector,Val,[{FirstClock,FirstVal}|Rest],Size) ->
-	ClockToCompare=case FirstVal of
-		{CommitVC, _DepVC, _ReadTime}-> %% physics
-			CommitVC;
-		CommitVC->
-			CommitVC
-	end,
-	ClockToCompare2=case Vector of
-		{CVC, _DVC, _RT}-> %% physics
-			CVC;
-		CVC->
-			CVC
-	end,
-	case not vectorclock:le(ClockToCompare2, ClockToCompare) of
-		true->
-			{[{Vector, Val}|[{FirstClock, FirstVal}|Rest]], Size+1};
-		false->
-			{[{FirstClock, FirstVal}|Rest], Size}
-	end.
+  ClockToCompare=case FirstClock of
+                   {CommitVC, _DepVC, _ReadTime}-> %% physics
+                     CommitVC;
+                   VClock1->
+                     VClock1
+                 end,
+  ClockToCompare2=case Vector of
+                    {CVC, _DVC, _RT}-> %% physics
+                      CVC;
+                    VC2->
+                      VC2
+                  end,
+  case not vectorclock:le(ClockToCompare2, ClockToCompare) of
+    true->
+      {[{Vector, Val}|[{FirstClock, FirstVal}|Rest]], Size+1};
+    false->
+      {[{FirstClock, FirstVal}|Rest], Size}
+  end.
 
 -spec sublist(vector_orddict(),non_neg_integer(),non_neg_integer()) -> vector_orddict().
 sublist({List,_Size}, Start, Len) ->
