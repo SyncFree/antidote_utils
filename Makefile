@@ -34,7 +34,7 @@ endif
 # $(error "Rebar not available on this system")
 # endif
 
-REBAR=./rebar
+REBAR=./rebar3
  
  
 .PHONY: all compile doc clean test dialyzer typer shell distclean pdf \
@@ -47,21 +47,17 @@ all: deps compile test
 # =============================================================================
  
 deps:
-	$(REBAR) get-deps
-	$(REBAR) compile
- 
-update-deps:
-	$(REBAR) update-deps
+	$(REBAR) deps
 	$(REBAR) compile
  
 compile:
 	$(REBAR) compile
  
 doc:
-	$(REBAR) skip_deps=true doc
+	$(REBAR) doc
  
 eunit: compile clean-common-test-data
-	$(REBAR) skip_deps=true eunit
+	$(REBAR) eunit
  
 $(TEST_DEPS):
 	@echo Running EUnit
@@ -119,7 +115,7 @@ shell: deps compile
 # rebuilt). However, eunit runs the tests, which probably
 # fails (thats probably why You want them in the shell). This
 # runs eunit but tells make to ignore the result.
-	- @$(REBAR) skip_deps=true eunit
+	- @$(REBAR) eunit
 	@$(ERL) $(ERLFLAGS)
  
 pdf:
@@ -129,7 +125,7 @@ clean:
 	- rm -rf $(CURDIR)/test/*.beam
 	- rm -rf $(CURDIR)/logs
 	- rm -rf $(CURDIR)/ebin
-	$(REBAR) skip_deps=true clean
+	$(REBAR) clean
  
 distclean: clean
 	- rm -rf $(DEPS_PLT)
