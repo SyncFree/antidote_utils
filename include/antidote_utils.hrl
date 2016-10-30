@@ -5,7 +5,7 @@
 -type type() :: atom().
 -type dcid() :: 'undefined' | {atom(), tuple()}. %% TODO, is this the only structure that is returned by riak_core_ring:cluster_name(Ring)?
 -type payload() :: term().
--record(operation, {op_number, payload :: payload()}).
+-record(operation, {op_number::op_num(), payload :: payload()}).
 -type operation() :: #operation{}.
 -type snapshot() :: term().
 -type op_num() :: non_neg_integer().
@@ -22,7 +22,8 @@
 -type dc_and_commit_time() :: {dcid(), clock_time()}.
 
 -record(tx_id, {local_start_time :: clock_time(),
-    server_pid :: pid()}).
+    server_pid :: atom()}).
+
 -record(clocksi_payload, {key :: key(),
     type :: type(),
     op_param :: op(),
