@@ -54,6 +54,7 @@ txid_to_json(#tx_id{local_start_time=Time,server_pid=Pid}) ->
 
 txid_from_json([{txid,[JTime,JPid]}]) ->
     #tx_id{local_start_time=deconvert_from_json(JTime),
+    %%TODO: This seems wrong; PIDs are not atoms.
 	  server_pid=atom_from_json(JPid)}.
 
 pid_to_json(PID) ->

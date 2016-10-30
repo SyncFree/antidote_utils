@@ -1,3 +1,4 @@
 .rebar/
 _build/
 TEST-*
+doc/

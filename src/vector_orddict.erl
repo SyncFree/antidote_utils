@@ -92,7 +92,7 @@ insert_internal(Vector,Val,[],Size,PrevList) ->
     {lists:reverse([{Vector,Val}|PrevList]),Size};
 
 insert_internal(Vector,Val,[{FirstClock,FirstVal}|Rest],Size,PrevList) ->
-    case vectorclock:gt(Vector,FirstClock) of
+    case vectorclock:all_dots_greater(Vector,FirstClock) of
 	true ->
 	    {lists:reverse(PrevList,[{Vector,Val}|[{FirstClock,FirstVal}|Rest]]),Size};
 	    %%PrevList;
